@@ -1,0 +1,77 @@
+trigger:
+- develop
+- rel/*
+- feature/*
+- bugfix/*
+
+pr:
+- develop
+- rel/*
+
+pool:
+  vmImage: windows-latest
+
+variables:
+  BuildConfiguration: Release
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+steps:
+- task: UseDotNet@2
+  displayName: 'Use .NET Core SDK 3.1.x'
+  inputs:
+    version: 3.1.302
+    performMultiLevelLookup: true
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: custom
+    custom: tool
+    arguments: install --tool-path . nbgv
+  displayName: Install NBGV tool
+
+- script: nbgv cloud
+  displayName: Set Version
+
+- task: MSBuild@1
+  displayName: 'Build solution Arin.NET.sln'
+  inputs:
+    solution: Arin.NET.sln
+    configuration: $(BuildConfiguration)
+    msbuildArguments: /restore /p:CreatePackage=true
+    maximumCpuCount: true
+
+#- task: DotNetCoreCLI@2
+#  inputs:
+#    command: test
+#    projects: Tests/**/*.csproj
+#    arguments: -c $(BuildConfiguration) --no-build --no-restore --settings CodeCoverage.runsettings --collect:"XPlat Code Coverage" 
+#  displayName: Run Unit Tests
+
+#- task: DotNetCoreCLI@2
+#  inputs:
+#    command: custom
+#    custom: tool
+#    arguments: install --tool-path . dotnet-reportgenerator-globaltool
+#  displayName: Install ReportGenerator tool
+
+#- script: reportgenerator -reports:$(Agent.TempDirectory)/**/coverage.cobertura.xml -targetdir:$(Build.SourcesDirectory)/coverlet/reports -reporttypes:"Cobertura"
+#  displayName: Create reports
+
+#- task: PublishCodeCoverageResults@1
+#  displayName: 'Publish code coverage'
+#  inputs:
+#    codeCoverageTool: Cobertura
+#    summaryFileLocation: $(Build.SourcesDirectory)/coverlet/reports/Cobertura.xml
+
+#- task: NuGetAuthenticate@0
+#  displayName: 'NuGet Authenticate'
+#- task: NuGetCommand@2
+#  displayName: 'NuGet push'
+#  inputs:
+#    command: push
+#    publishVstsFeed: 'Arin.NET/arin.net'
+#    allowPackageConflicts: true
+
+- publish: artifacts
+  displayName: Publish build packages
+  artifact: BuildPackages
