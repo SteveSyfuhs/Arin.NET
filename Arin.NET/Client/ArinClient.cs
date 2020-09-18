@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Net;
 using System.Net.Http;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 using Arin.NET.Entities;
 
 namespace Arin.NET.Client
@@ -29,7 +31,7 @@ namespace Arin.NET.Client
 
         public async Task<RdapResponse> Query(IPAddress query, CancellationToken cancellation = default)
         {
-            var endpoint = new Uri(this.Endpoint, query.ToString());
+            var endpoint = new Uri(this.Endpoint, HttpUtility.UrlEncode(query.ToString()));
 
             var response = await httpClient.GetAsync(endpoint, cancellation);
 

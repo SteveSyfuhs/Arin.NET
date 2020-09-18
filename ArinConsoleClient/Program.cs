@@ -31,6 +31,8 @@ namespace ArinConsoleClient
 
             var client = new ArinClient();
 
+            int thrown = 0;
+
             if (string.IsNullOrWhiteSpace(addr))
             {
                 Console.WriteLine("Usage: ArinConsoleClient.exe ip-addr|path-to-file.txt");
@@ -39,9 +41,25 @@ namespace ArinConsoleClient
             {
                 var file = File.ReadAllLines(addr);
 
-                foreach (var ip in file)
+                for (var i = 0; i < file.Length; i++)
                 {
-                    await Query(ip, client);
+                    var ip = file[i];
+
+                    Console.WriteLine($"# {i} = {ip}");
+
+                    try
+                    {
+                        await Query(ip, client);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex);
+
+                        if (thrown++ > 10)
+                        {
+                            throw;
+                        }
+                    }
                 }
             }
             else
@@ -88,13 +106,16 @@ namespace ArinConsoleClient
 
                 if (entity.VCard != null && entity.VCard.TryGetValue("fn", out ContactCardProperty prop))
                 {
-                    line += $": {prefix}{string.Join(" ", prop.Value)}";
-
-                    Console.WriteLine(line);
+                    Console.WriteLine($"{line}: {string.Join(" ", prop.Value)}");
                 }
                 else
                 {
                     Console.WriteLine(line);
+                }
+
+                if (entity.VCard != null && entity.VCard.TryGetValue("email", out ContactCardProperty emailProp))
+                {
+                    Console.WriteLine($"{line}: {string.Join(" ", emailProp.Value)}");
                 }
 
                 DisplayEntities(entity.Entities, $"{prefix}   ");
